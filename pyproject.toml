@@ -32,6 +32,7 @@ Issues = "https://github.com/logic77lhl/wxarchive/issues"
 
 [project.scripts]
 wxarchive = "wxarchive.cli:main"
+wxarchive-pack = "wxarchive.pack:main"
 
 [tool.setuptools.packages.find]
 where = ["src"]
