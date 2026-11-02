@@ -11,6 +11,7 @@
 from __future__ import annotations
 
 import random
+import re
 import time
 from typing import Any
 
@@ -36,6 +37,10 @@ BLOCK_MARKERS = ("未知错误", "环境异常", "失效的验证页", "该内�
 
 class FetchError(RuntimeError):
     """网络请求彻底失败（重试后仍不可用）。"""
+
+
+class CaptchaError(FetchError):
+    """被微信风控拦截（302 到 appmsgcaptcha），需要冷却一段时间。"""
 
 
 def human_sleep(low: float = 1.2, high: float = 2.8) -> None:
@@ -85,13 +90,14 @@ class Fetcher:
     def article_html(self, url: str) -> str:
         """下载文章页，返回原始 HTML；失败抛 FetchError。"""
         url = url.split("#")[0]
-        if "scene=" not in url:
-            url += ("&" if "?" in url else "?") + "scene=27"
+        # 统一改写 scene：微信对 scene=21 的分享链接更容易弹验证码
+        url = re.sub(r"[?&]scene=\d+", "", url)
+        url += ("&" if "?" in url else "?") + "scene=27"
 
         for attempt in range(self.retries):
             resp = self.get(url)
             if "appmsgcaptcha" in resp.url or any("appmsgcaptcha" in r.url for r in resp.history):
-                raise FetchError("触发微信验证码（访问频率过高），请等待 10~30 分钟后重试")
+                raise CaptchaError("触发微信验证码（访问频率过高）")
             html = resp.text
             ok = len(html) > 20000 and "js_content" in html
             if ok:

@@ -12,7 +12,7 @@ from collections.abc import Iterable
 from . import __version__
 from .album import AlbumItem, album_info, iter_album
 from .article import parse_article, safe_filename, save_article
-from .fetch import DEFAULT_BIZ, Fetcher, FetchError, human_sleep
+from .fetch import DEFAULT_BIZ, CaptchaError, Fetcher, FetchError, human_sleep
 from .store import State, url_key, write_index
 from .urls import Target, parse_target
 
@@ -37,6 +37,7 @@ def build_parser() -> argparse.ArgumentParser:
         description="把微信公众号文章 / 合集保存到本地（Markdown + HTML + 图片），无需登录。",
     )
     p.add_argument("url", nargs="*", help="文章或合集链接，可多个")
+    p.add_argument("--url-file", default="", help="从文本文件读取链接，一行一个（# 开头为注释）")
     p.add_argument("--out", "-o", default="wxarchive_out", help="保存根目录（默认 ./wxarchive_out）")
     p.add_argument("--limit", type=int, default=0, help="最多下载 N 篇（调试用）")
     p.add_argument("--delay", type=_parse_delay, default=(1.2, 2.8), help="每篇间隔秒数区间，默认 1.2,2.8")
@@ -51,6 +52,8 @@ def build_parser() -> argparse.ArgumentParser:
     )
     p.add_argument("--list", action="store_true", help="只列出将要下载的文章，不实际下载")
     p.add_argument("--retry-failed", action="store_true", help="忽略已有成功记录，重试此前失败的条目")
+    p.add_argument("--cooldown", type=int, default=900, help="触发验证码后暂停秒数（默认 900）")
+    p.add_argument("--cooldowns", type=int, default=2, help="单篇最多冷却重试次数，超过则整体中止（默认 2）")
     p.add_argument("--version", action="version", version=f"wxarchive {__version__}")
     return p
 
@@ -72,12 +75,17 @@ def _album_folder_name(fetcher: Fetcher, album_id: str, biz: str) -> str:
 
 
 def run(args: argparse.Namespace) -> int:
-    if not args.url:
+    urls = list(args.url)
+    if args.url_file:
+        with open(args.url_file, encoding="utf-8") as fh:
+            urls += [line.strip() for line in fh if line.strip() and not line.startswith("#")]
+
+    if not urls:
         _log("请提供至少一个微信文章或合集链接，例如：")
         _log('  wxarchive "https://mp.weixin.qq.com/s?__biz=...&mid=...&idx=1&sn=..." -o ./archive')
         return 2
 
-    targets = [parse_target(u) for u in args.url]
+    targets = [parse_target(u) for u in urls]
 
     # 每个合集一个独立目录：重复文章各存一份，互不影响
     if args.split_albums and any(t.kind == "album" for t in targets):
@@ -108,6 +116,21 @@ def run(args: argparse.Namespace) -> int:
     ok = skipped = failed = 0
     started = time.time()
 
+    class _StopRun(Exception):
+        """验证码冷却多次仍被拦截，整体中止。"""
+
+    def fetch_html(url: str) -> str:
+        for attempt in range(args.cooldowns + 1):
+            try:
+                return fetcher.article_html(url)
+            except CaptchaError as exc:
+                if attempt >= args.cooldowns:
+                    raise
+                wait = args.cooldown * (attempt + 1)
+                _log(f"[冷却] {exc}，暂停 {wait} 秒后重试（{attempt + 1}/{args.cooldowns}）")
+                time.sleep(wait)
+        raise FetchError("unreachable")
+
     def process(item: AlbumItem) -> dict | None:
         nonlocal ok, skipped, failed
         if state.done(item.url) and not args.retry_failed:
@@ -115,7 +138,11 @@ def run(args: argparse.Namespace) -> int:
             return state.data.get(url_key(item.url))
 
         try:
-            html = fetcher.article_html(item.url)
+            html = fetch_html(item.url)
+        except CaptchaError as exc:
+            raise _StopRun(str(exc)) from exc
+
+        try:
             art = parse_article(html, item.url)
             if art.node is None:
                 raise FetchError("页面里没有正文（可能已删除、被折叠或需要登录）")
@@ -140,10 +167,15 @@ def run(args: argparse.Namespace) -> int:
             _log(f"[FAIL] {item.url}  {exc}")
             return rec
 
-    while albums or queue:
-        while queue:
+    stopped: str | None = None
+    while (albums or queue) and not stopped:
+        while queue and not stopped:
             item = queue.popleft()
-            rec = process(item)
+            try:
+                rec = process(item)
+            except _StopRun as exc:
+                stopped = str(exc)
+                break
 
             if args.follow_albums and rec and rec.get("ok"):
                 for aid in rec.get("albums") or []:
@@ -183,6 +215,13 @@ def run(args: argparse.Namespace) -> int:
 
     index_path = write_index(args.out, state.records)
     minutes = (time.time() - started) / 60
+    if stopped:
+        _log(
+            f"\n[中止] {stopped}；成功 {ok}，跳过 {skipped}，失败 {failed}；"
+            f"用时 {minutes:.1f} 分钟\n进度已保存，稍后重跑即可续传。"
+        )
+        return 1
+
     _log(
         f"\n完成：成功 {ok}，跳过（已存在）{skipped}，失败 {failed}；"
         f"用时 {minutes:.1f} 分钟\n索引：{index_path}"
