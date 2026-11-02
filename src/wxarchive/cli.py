@@ -11,7 +11,7 @@ from collections.abc import Iterable
 
 from . import __version__
 from .album import AlbumItem, album_info, iter_album
-from .article import parse_article, save_article
+from .article import parse_article, safe_filename, save_article
 from .fetch import DEFAULT_BIZ, Fetcher, FetchError, human_sleep
 from .store import State, url_key, write_index
 from .urls import Target, parse_target
@@ -44,6 +44,11 @@ def build_parser() -> argparse.ArgumentParser:
     p.add_argument("--no-original", action="store_true", help="不保存 original.html 原文存档")
     p.add_argument("--follow-albums", action="store_true", help="顺着文章里的合集链接，继续抓同账号其他专栏")
     p.add_argument("--max-albums", type=int, default=10, help="--follow-albums 时最多扩展几个合集")
+    p.add_argument(
+        "--split-albums",
+        action="store_true",
+        help="每个合集存到独立子目录（按合集名命名），重复文章各存一份",
+    )
     p.add_argument("--list", action="store_true", help="只列出将要下载的文章，不实际下载")
     p.add_argument("--retry-failed", action="store_true", help="忽略已有成功记录，重试此前失败的条目")
     p.add_argument("--version", action="version", version=f"wxarchive {__version__}")
@@ -58,6 +63,14 @@ def _single_articles(targets: Iterable[Target]) -> list[AlbumItem]:
     ]
 
 
+def _album_folder_name(fetcher: Fetcher, album_id: str, biz: str) -> str:
+    try:
+        info = album_info(fetcher, album_id, biz)
+        return safe_filename(info.get("title") or album_id, 40)
+    except Exception:  # noqa: BLE001
+        return album_id
+
+
 def run(args: argparse.Namespace) -> int:
     if not args.url:
         _log("请提供至少一个微信文章或合集链接，例如：")
@@ -65,6 +78,22 @@ def run(args: argparse.Namespace) -> int:
         return 2
 
     targets = [parse_target(u) for u in args.url]
+
+    # 每个合集一个独立目录：重复文章各存一份，互不影响
+    if args.split_albums and any(t.kind == "album" for t in targets):
+        rc = 0
+        probe = Fetcher(delay=args.delay)
+        for t in targets:
+            if t.kind != "album":
+                continue
+            name = _album_folder_name(probe, t.album_id, t.biz or DEFAULT_BIZ)
+            sub = argparse.Namespace(**vars(args))
+            sub.out = os.path.join(args.out, name)
+            sub.url = [t.url]
+            sub.split_albums = False
+            rc = max(rc, run(sub))
+        return rc
+
     fetcher = Fetcher(delay=args.delay)
     os.makedirs(args.out, exist_ok=True)
     state = State(args.out)

@@ -69,6 +69,7 @@ wxarchive "<链接>" -o ./out --follow-albums --max-albums 20
 | `--no-images` | 关 | 不下载图片 |
 | `--no-original` | 关 | 不保存 `original.html` |
 | `--follow-albums` | 关 | 扩展抓取文章所属的其他合集 |
+| `--split-albums` | 关 | 每个合集存到独立子目录（按合集名），重复文章各存一份 |
 | `--max-albums N` | 10 | 扩展上限 |
 | `--list` | 关 | 只列标题 |
 | `--retry-failed` | 关 | 重试此前失败的条目 |
