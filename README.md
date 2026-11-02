@@ -1,121 +1,102 @@
-# wxarchive
+﻿# wxarchive
 
-> 给一个微信公众号链接，把它完整存到本地：Markdown + 离线 HTML + 原图，按年月日分文件夹。**不需要登录，不需要浏览器。**
+> 缁欎竴涓井淇″叕浼楀彿閾炬帴锛屾妸瀹冨畬鏁村瓨鍒版湰鍦帮細Markdown + 绂荤嚎 HTML + 鍘熷浘锛屾寜骞存湀鏃ュ垎鏂囦欢澶广€?*涓嶉渶瑕佺櫥褰曪紝涓嶉渶瑕佹祻瑙堝櫒銆?*
 
 [![PyPI](https://img.shields.io/badge/pypi-wxarchive-blue)](https://pypi.org/project/wxarchive/)
 [![Python](https://img.shields.io/badge/python-3.9%2B-blue)](https://www.python.org/)
 [![License](https://img.shields.io/badge/license-MIT-green)](LICENSE)
-[![Tests](https://github.com/your-name/wxarchive/actions/workflows/ci.yml/badge.svg)](https://github.com/your-name/wxarchive/actions/workflows/ci.yml)
+[![Tests](https://github.com/logic77lhl/wxarchive/actions/workflows/ci.yml/badge.svg)](https://github.com/logic77lhl/wxarchive/actions/workflows/ci.yml)
 
 ```bash
-wxarchive "https://mp.weixin.qq.com/mp/appmsgalbum?__biz=...&album_id=4020951985321934849" -o ./工程塑料
+wxarchive "https://mp.weixin.qq.com/mp/appmsgalbum?__biz=...&album_id=4020951985321934849" -o ./宸ョ▼濉戞枡
 ```
 
 ```
-工程塑料/
-├─ _index.csv
-└─ 2025/2025-06/2025-06-07_国内PPS发展历程与现状分析/
-   ├─ original.html    原文完整 DOM（去脚本），图片保留原始外链
-   ├─ index.html       图片已本地化，双击即可离线阅读
-   ├─ article.md       正文 Markdown，可直接编辑
-   ├─ meta.json        标题 / 作者 / 时间 / 原创 / 摘要 / 所属合集
-   └─ images/001.jpg
+宸ョ▼濉戞枡/
+鈹溾攢 _index.csv
+鈹斺攢 2025/2025-06/2025-06-07_鍥藉唴PPS鍙戝睍鍘嗙▼涓庣幇鐘跺垎鏋?
+   鈹溾攢 original.html    鍘熸枃瀹屾暣 DOM锛堝幓鑴氭湰锛夛紝鍥剧墖淇濈暀鍘熷澶栭摼
+   鈹溾攢 index.html       鍥剧墖宸叉湰鍦板寲锛屽弻鍑诲嵆鍙绾块槄璇?   鈹溾攢 article.md       姝ｆ枃 Markdown锛屽彲鐩存帴缂栬緫
+   鈹溾攢 meta.json        鏍囬 / 浣滆€?/ 鏃堕棿 / 鍘熷垱 / 鎽樿 / 鎵€灞炲悎闆?   鈹斺攢 images/001.jpg
 ```
 
 ---
 
-## 特性
-
-- **一个链接搞定**：自动识别「单篇文章」和「合集/专栏」，合集自动翻页拿全量。
-- **原文保真**：同时保存原文 DOM 与转换后的 Markdown，图片按顺序落地，占位图过滤、重复图去重。
-- **离线可读**：生成的 `index.html` 不依赖网络，样式内联，手机上也能看。
-- **可断点续传**：中途 Ctrl+C 或断网，重跑自动跳过已完成，只补失败的。
-- **不打扰服务器**：默认每篇随机间隔 1.2~2.8 秒，单线程，尽量不触发风控。
-- **对 agent 友好**：自带 [SKILL.md](skills/wxarchive/SKILL.md)，opencode / Claude Code / Cursor 装上就能用。
-
-## 安装
+## 鐗规€?
+- **涓€涓摼鎺ユ悶瀹?*锛氳嚜鍔ㄨ瘑鍒€屽崟绡囨枃绔犮€嶅拰銆屽悎闆?涓撴爮銆嶏紝鍚堥泦鑷姩缈婚〉鎷垮叏閲忋€?- **鍘熸枃淇濈湡**锛氬悓鏃朵繚瀛樺師鏂?DOM 涓庤浆鎹㈠悗鐨?Markdown锛屽浘鐗囨寜椤哄簭钀藉湴锛屽崰浣嶅浘杩囨护銆侀噸澶嶅浘鍘婚噸銆?- **绂荤嚎鍙**锛氱敓鎴愮殑 `index.html` 涓嶄緷璧栫綉缁滐紝鏍峰紡鍐呰仈锛屾墜鏈轰笂涔熻兘鐪嬨€?- **鍙柇鐐圭画浼?*锛氫腑閫?Ctrl+C 鎴栨柇缃戯紝閲嶈窇鑷姩璺宠繃宸插畬鎴愶紝鍙ˉ澶辫触鐨勩€?- **涓嶆墦鎵版湇鍔″櫒**锛氶粯璁ゆ瘡绡囬殢鏈洪棿闅?1.2~2.8 绉掞紝鍗曠嚎绋嬶紝灏介噺涓嶈Е鍙戦鎺с€?- **瀵?agent 鍙嬪ソ**锛氳嚜甯?[SKILL.md](skills/wxarchive/SKILL.md)锛宱pencode / Claude Code / Cursor 瑁呬笂灏辫兘鐢ㄣ€?
+## 瀹夎
 
 ```bash
 pip install wxarchive
-# 或者从源码
-git clone https://github.com/your-name/wxarchive.git
+# 鎴栬€呬粠婧愮爜
+git clone https://github.com/logic77lhl/wxarchive.git
 cd wxarchive && pip install -e .
 ```
 
-## 用法
+## 鐢ㄦ硶
 
 ```bash
-# 1) 先试 3 篇
-wxarchive "<链接>" -o ./out --limit 3
+# 1) 鍏堣瘯 3 绡?wxarchive "<閾炬帴>" -o ./out --limit 3
 
-# 2) 全量下载
-wxarchive "<链接>" -o ./out
+# 2) 鍏ㄩ噺涓嬭浇
+wxarchive "<閾炬帴>" -o ./out
 
-# 3) 只看看有多少篇、都是什么
-wxarchive "<链接>" --list
+# 3) 鍙湅鐪嬫湁澶氬皯绡囥€侀兘鏄粈涔?wxarchive "<閾炬帴>" --list
 
-# 4) 顺着文章里的合集，把同账号其他专栏也抓了
-wxarchive "<链接>" -o ./out --follow-albums --max-albums 20
+# 4) 椤虹潃鏂囩珷閲岀殑鍚堥泦锛屾妸鍚岃处鍙峰叾浠栦笓鏍忎篃鎶撲簡
+wxarchive "<閾炬帴>" -o ./out --follow-albums --max-albums 20
 ```
 
-### 参数
+### 鍙傛暟
 
-| 参数 | 默认 | 说明 |
+| 鍙傛暟 | 榛樿 | 璇存槑 |
 |---|---|---|
-| `url` | — | 文章或合集链接，可传多个 |
-| `--out, -o` | `./wxarchive_out` | 保存根目录 |
-| `--limit N` | 0（不限） | 最多下载 N 篇 |
-| `--delay a,b` | `1.2,2.8` | 每篇间隔秒数区间 |
-| `--no-images` | 关 | 不下载图片 |
-| `--no-original` | 关 | 不保存 `original.html` |
-| `--follow-albums` | 关 | 扩展抓取文章所属的其他合集 |
-| `--max-albums N` | 10 | 扩展上限 |
-| `--list` | 关 | 只列标题 |
-| `--retry-failed` | 关 | 重试此前失败的条目 |
+| `url` | 鈥?| 鏂囩珷鎴栧悎闆嗛摼鎺ワ紝鍙紶澶氫釜 |
+| `--out, -o` | `./wxarchive_out` | 淇濆瓨鏍圭洰褰?|
+| `--limit N` | 0锛堜笉闄愶級 | 鏈€澶氫笅杞?N 绡?|
+| `--delay a,b` | `1.2,2.8` | 姣忕瘒闂撮殧绉掓暟鍖洪棿 |
+| `--no-images` | 鍏?| 涓嶄笅杞藉浘鐗?|
+| `--no-original` | 鍏?| 涓嶄繚瀛?`original.html` |
+| `--follow-albums` | 鍏?| 鎵╁睍鎶撳彇鏂囩珷鎵€灞炵殑鍏朵粬鍚堥泦 |
+| `--max-albums N` | 10 | 鎵╁睍涓婇檺 |
+| `--list` | 鍏?| 鍙垪鏍囬 |
+| `--retry-failed` | 鍏?| 閲嶈瘯姝ゅ墠澶辫触鐨勬潯鐩?|
 
-## 作为 agent skill 使用
+## 浣滀负 agent skill 浣跨敤
 
-把 `skills/wxarchive/` 整个目录拷到你的 agent 技能目录即可：
+鎶?`skills/wxarchive/` 鏁翠釜鐩綍鎷峰埌浣犵殑 agent 鎶€鑳界洰褰曞嵆鍙細
 
-| 工具 | 放置位置 |
+| 宸ュ叿 | 鏀剧疆浣嶇疆 |
 |---|---|
 | opencode | `~/.config/opencode/skills/wxarchive/` |
 | Claude Code | `~/.claude/skills/wxarchive/` |
-| Cursor / 其他 | 项目内 `.agents/skills/wxarchive/`（按你的约定） |
+| Cursor / 鍏朵粬 | 椤圭洰鍐?`.agents/skills/wxarchive/`锛堟寜浣犵殑绾﹀畾锛?|
 
-之后直接对 agent 说「把这个链接下载下来」，它会自己调用 `wxarchive`。
-
-也可以完全不用 skill，直接让 agent 执行：
-
+涔嬪悗鐩存帴瀵?agent 璇淬€屾妸杩欎釜閾炬帴涓嬭浇涓嬫潵銆嶏紝瀹冧細鑷繁璋冪敤 `wxarchive`銆?
+涔熷彲浠ュ畬鍏ㄤ笉鐢?skill锛岀洿鎺ヨ agent 鎵ц锛?
 ```bash
-wxarchive "<URL>" -o "<目录>"
+wxarchive "<URL>" -o "<鐩綍>"
 ```
 
-## 工作原理（也是踩过的坑）
+## 宸ヤ綔鍘熺悊锛堜篃鏄俯杩囩殑鍧戯級
 
-| 问题 | 解法 |
+| 闂 | 瑙ｆ硶 |
 |---|---|
-| 文章页经常返回「未知错误 / 失效的验证页面」 | URL 追加 `&scene=27`，并用手机微信 UA |
-| 合集翻页 | `mp/appmsgalbum?action=getalbum&album_id=...&f=json`，20 条/页，用 `begin_msgid`+`begin_itemidx` 续翻 |
-| 正文被懒加载 | 取 `#js_content`，把 `img[data-src]` 还原成 `src` |
-| 图片防盗链 | 下载时带 `Referer: https://mp.weixin.qq.com/` |
-| 1×1 占位图 / 重复二维码 | 小于 1KB 丢弃，同文 md5 去重 |
-| 页面 3.7MB 太占空间 | 存原文时去掉 `script/style/link`，单篇降到约 100KB |
-| 微信 HTML 转 Markdown 出现空 `###`、`2. 1.` | 转换后做针对性清理 |
+| 鏂囩珷椤电粡甯歌繑鍥炪€屾湭鐭ラ敊璇?/ 澶辨晥鐨勯獙璇侀〉闈€?| URL 杩藉姞 `&scene=27`锛屽苟鐢ㄦ墜鏈哄井淇?UA |
+| 鍚堥泦缈婚〉 | `mp/appmsgalbum?action=getalbum&album_id=...&f=json`锛?0 鏉?椤碉紝鐢?`begin_msgid`+`begin_itemidx` 缁炕 |
+| 姝ｆ枃琚噿鍔犺浇 | 鍙?`#js_content`锛屾妸 `img[data-src]` 杩樺師鎴?`src` |
+| 鍥剧墖闃茬洍閾?| 涓嬭浇鏃跺甫 `Referer: https://mp.weixin.qq.com/` |
+| 1脳1 鍗犱綅鍥?/ 閲嶅浜岀淮鐮?| 灏忎簬 1KB 涓㈠純锛屽悓鏂?md5 鍘婚噸 |
+| 椤甸潰 3.7MB 澶崰绌洪棿 | 瀛樺師鏂囨椂鍘绘帀 `script/style/link`锛屽崟绡囬檷鍒扮害 100KB |
+| 寰俊 HTML 杞?Markdown 鍑虹幇绌?`###`銆乣2. 1.` | 杞崲鍚庡仛閽堝鎬ф竻鐞?|
 
-## 已知限制
+## 宸茬煡闄愬埗
 
-- **只覆盖合集/专栏内的文章**。公众号没有公开的「全部历史消息」接口，不在任何合集中的文章需要登录态（`uin` / `key` / `pass_ticket`）才能枚举。
-- **拿不到阅读量 / 点赞 / 在看**：这些走 JS 接口，静态页面里没有。
-- 付费文章、已删除文章、被折叠的「分享型」内容无法下载正文。
-- 微信风控随时可能变化，如遇大量失败请降低频率或稍后再试。
+- **鍙鐩栧悎闆?涓撴爮鍐呯殑鏂囩珷**銆傚叕浼楀彿娌℃湁鍏紑鐨勩€屽叏閮ㄥ巻鍙叉秷鎭€嶆帴鍙ｏ紝涓嶅湪浠讳綍鍚堥泦涓殑鏂囩珷闇€瑕佺櫥褰曟€侊紙`uin` / `key` / `pass_ticket`锛夋墠鑳芥灇涓俱€?- **鎷夸笉鍒伴槄璇婚噺 / 鐐硅禐 / 鍦ㄧ湅**锛氳繖浜涜蛋 JS 鎺ュ彛锛岄潤鎬侀〉闈㈤噷娌℃湁銆?- 浠樿垂鏂囩珷銆佸凡鍒犻櫎鏂囩珷銆佽鎶樺彔鐨勩€屽垎浜瀷銆嶅唴瀹规棤娉曚笅杞芥鏂囥€?- 寰俊椋庢帶闅忔椂鍙兘鍙樺寲锛屽閬囧ぇ閲忓け璐ヨ闄嶄綆棰戠巼鎴栫◢鍚庡啀璇曘€?
+## 鍚堣澹版槑
 
-## 合规声明
-
-本项目仅用于**个人学习、备份与离线阅读**。文章版权归原作者及公众号所有，二次发布、商用、批量搬运需获得授权。请遵守微信平台规则与当地法律，因使用本项目产生的任何后果由使用者自行承担。
-
-## 开发
-
+鏈」鐩粎鐢ㄤ簬**涓汉瀛︿範銆佸浠戒笌绂荤嚎闃呰**銆傛枃绔犵増鏉冨綊鍘熶綔鑰呭強鍏紬鍙锋墍鏈夛紝浜屾鍙戝竷銆佸晢鐢ㄣ€佹壒閲忔惉杩愰渶鑾峰緱鎺堟潈銆傝閬靛畧寰俊骞冲彴瑙勫垯涓庡綋鍦版硶寰嬶紝鍥犱娇鐢ㄦ湰椤圭洰浜х敓鐨勪换浣曞悗鏋滅敱浣跨敤鑰呰嚜琛屾壙鎷呫€?
+## 寮€鍙?
 ```bash
 pip install -e ".[dev]"
 ruff check .

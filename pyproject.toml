@@ -1,4 +1,4 @@
-[build-system]
+﻿[build-system]
 requires = ["setuptools>=68"]
 build-backend = "setuptools.build_meta"
 
@@ -27,8 +27,8 @@ dependencies = [
 dev = ["pytest>=8", "ruff>=0.6"]
 
 [project.urls]
-Homepage = "https://github.com/your-name/wxarchive"
-Issues = "https://github.com/your-name/wxarchive/issues"
+Homepage = "https://github.com/logic77lhl/wxarchive"
+Issues = "https://github.com/logic77lhl/wxarchive/issues"
 
 [project.scripts]
 wxarchive = "wxarchive.cli:main"
