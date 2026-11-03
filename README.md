@@ -2,19 +2,18 @@
 
 > 给一个微信公众号链接，把它完整存到本地：Markdown + 离线 HTML + 原图，按年月日分文件夹。**不需要登录，不需要浏览器。**
 
-[![PyPI](https://img.shields.io/badge/pypi-wxarchive-blue)](https://pypi.org/project/wxarchive/)
 [![Python](https://img.shields.io/badge/python-3.9%2B-blue)](https://www.python.org/)
 [![License](https://img.shields.io/badge/license-MIT-green)](LICENSE)
 [![Tests](https://github.com/logic77lhl/wxarchive/actions/workflows/ci.yml/badge.svg)](https://github.com/logic77lhl/wxarchive/actions/workflows/ci.yml)
 
 ```bash
-wxarchive "https://mp.weixin.qq.com/mp/appmsgalbum?__biz=...&album_id=4020951985321934849" -o ./工程塑料
+wxarchive "<文章或合集链接>" -o ./archive
 ```
 
 ```
-工程塑料/
+archive/
 ├─ _index.csv
-└─ 2025/2025-06/2025-06-07_国内PPS发展历程与现状分析/
+└─ 2025/2025-06/2025-06-07_文章标题/
    ├─ original.html    原文完整 DOM（去脚本），图片保留原始外链
    ├─ index.html       图片已本地化，双击即可离线阅读
    ├─ article.md       正文 Markdown，可直接编辑
@@ -35,11 +34,18 @@ wxarchive "https://mp.weixin.qq.com/mp/appmsgalbum?__biz=...&album_id=4020951985
 
 ## 安装
 
+> 尚未发布到 PyPI，请从源码安装。
+
 ```bash
-pip install wxarchive
-# 或者从源码
 git clone https://github.com/logic77lhl/wxarchive.git
-cd wxarchive && pip install -e .
+cd wxarchive
+pip install .
+```
+
+开发模式（含测试依赖）：
+
+```bash
+pip install -e ".[dev]"
 ```
 
 ## 用法
@@ -63,9 +69,11 @@ wxarchive "<链接>" -o ./out --follow-albums --max-albums 20
 | 参数 | 默认 | 说明 |
 |---|---|---|
 | `url` | — | 文章或合集链接，可传多个 |
+| `--url-file` | — | 从文本文件读取链接，一行一个 |
 | `--out, -o` | `./wxarchive_out` | 保存根目录 |
 | `--limit N` | 0（不限） | 最多下载 N 篇 |
 | `--delay a,b` | `1.2,2.8` | 每篇间隔秒数区间 |
+| `--cooldown N` | 900 | 连续被验证码拦截时暂停的秒数 |
 | `--no-images` | 关 | 不下载图片 |
 | `--no-original` | 关 | 不保存 `original.html` |
 | `--follow-albums` | 关 | 扩展抓取文章所属的其他合集 |
@@ -122,10 +130,10 @@ wxarchive "<URL>" -o "<目录>"
 
 ```bash
 # 全量包（含图片，约等于原体积）
-wxarchive-pack ./工程塑料 --zip 工程塑料.zip
+wxarchive-pack ./archive --zip archive.zip
 
 # 只打包文字（跳过图片，体积通常只有几 MB，适合微信/邮件）
-wxarchive-pack ./工程塑料 --zip 工程塑料_文字版.zip --text-only
+wxarchive-pack ./archive --zip archive_text.zip --text-only
 ```
 
 然后任选一种方式传过去：
@@ -134,12 +142,11 @@ wxarchive-pack ./工程塑料 --zip 工程塑料_文字版.zip --text-only
 
 ```bash
 # 打包好的机器上
-cd E:\WeChat_articles
 python -m http.server 8000
 # 另一台电脑浏览器打开 http://<本机IP>:8000/ 下载 zip
 ```
 
-查本机 IP：`ipconfig`，看「IPv4 地址」，例如 `192.168.1.23`。
+查本机 IP：`ipconfig`，看「IPv4 地址」那一行。
 
 **其他方式**
 

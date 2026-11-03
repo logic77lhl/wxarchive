@@ -52,8 +52,7 @@ def build_parser() -> argparse.ArgumentParser:
     )
     p.add_argument("--list", action="store_true", help="只列出将要下载的文章，不实际下载")
     p.add_argument("--retry-failed", action="store_true", help="忽略已有成功记录，重试此前失败的条目")
-    p.add_argument("--cooldown", type=int, default=900, help="触发验证码后暂停秒数（默认 900）")
-    p.add_argument("--cooldowns", type=int, default=2, help="单篇最多冷却重试次数，超过则整体中止（默认 2）")
+    p.add_argument("--cooldown", type=int, default=900, help="连续被验证码拦截时暂停秒数（默认 900）")
     p.add_argument("--version", action="version", version=f"wxarchive {__version__}")
     return p
 
@@ -115,32 +114,31 @@ def run(args: argparse.Namespace) -> int:
 
     ok = skipped = failed = 0
     started = time.time()
-
-    class _StopRun(Exception):
-        """验证码冷却多次仍被拦截，整体中止。"""
-
-    def fetch_html(url: str) -> str:
-        for attempt in range(args.cooldowns + 1):
-            try:
-                return fetcher.article_html(url)
-            except CaptchaError as exc:
-                if attempt >= args.cooldowns:
-                    raise
-                wait = args.cooldown * (attempt + 1)
-                _log(f"[冷却] {exc}，暂停 {wait} 秒后重试（{attempt + 1}/{args.cooldowns}）")
-                time.sleep(wait)
-        raise FetchError("unreachable")
+    captcha_streak = 0
 
     def process(item: AlbumItem) -> dict | None:
-        nonlocal ok, skipped, failed
+        nonlocal ok, skipped, failed, captcha_streak
         if state.done(item.url) and not args.retry_failed:
             skipped += 1
             return state.data.get(url_key(item.url))
 
         try:
-            html = fetch_html(item.url)
+            html = fetcher.article_html(item.url)
         except CaptchaError as exc:
-            raise _StopRun(str(exc)) from exc
+            # 单个链接被标记很常见，先记账继续；连续多次才说明 IP 被限流
+            captcha_streak += 1
+            failed += 1
+            rec = {"ok": False, "url": item.url, "title": item.title, "error": str(exc)}
+            state.record(item.url, rec)
+            state.save()
+            _log(f"[验证码] 连续 {captcha_streak} 次  {item.url[:70]}")
+            if captcha_streak >= 3:
+                _log(f"[冷却] 连续 {captcha_streak} 次被拦，暂停 {args.cooldown} 秒")
+                time.sleep(args.cooldown)
+                captcha_streak = 0
+            return rec
+
+        captcha_streak = 0
 
         try:
             art = parse_article(html, item.url)
@@ -167,15 +165,11 @@ def run(args: argparse.Namespace) -> int:
             _log(f"[FAIL] {item.url}  {exc}")
             return rec
 
-    stopped: str | None = None
-    while (albums or queue) and not stopped:
-        while queue and not stopped:
+    while albums or queue:
+        while queue:
             item = queue.popleft()
-            try:
-                rec = process(item)
-            except _StopRun as exc:
-                stopped = str(exc)
-                break
+            skipped_before = skipped
+            rec = process(item)
 
             if args.follow_albums and rec and rec.get("ok"):
                 for aid in rec.get("albums") or []:
@@ -184,7 +178,8 @@ def run(args: argparse.Namespace) -> int:
 
             if args.limit and ok >= args.limit:
                 break
-            human_sleep(*args.delay)
+            if skipped == skipped_before:  # 跳过的条目不用等
+                human_sleep(*args.delay)
 
         if args.limit and ok >= args.limit:
             break
@@ -215,13 +210,6 @@ def run(args: argparse.Namespace) -> int:
 
     index_path = write_index(args.out, state.records)
     minutes = (time.time() - started) / 60
-    if stopped:
-        _log(
-            f"\n[中止] {stopped}；成功 {ok}，跳过 {skipped}，失败 {failed}；"
-            f"用时 {minutes:.1f} 分钟\n进度已保存，稍后重跑即可续传。"
-        )
-        return 1
-
     _log(
         f"\n完成：成功 {ok}，跳过（已存在）{skipped}，失败 {failed}；"
         f"用时 {minutes:.1f} 分钟\n索引：{index_path}"

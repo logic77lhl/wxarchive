@@ -18,8 +18,7 @@ description: 把一个微信公众号链接（单篇文章，或「合集/专栏
 1. **确认环境**（只需一次）：
 
    ```bash
-   python -c "import wxarchive" || pip install -e .
-   # 或从 PyPI：pip install wxarchive
+   python -c "import wxarchive" || pip install "git+https://github.com/logic77lhl/wxarchive.git"
    ```
 
 2. **先跑 3 篇试水**，确认能下载：
