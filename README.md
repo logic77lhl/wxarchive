@@ -1,3 +1,7 @@
+**中文** | [English](README.en.md)
+
+---
+
 # wxarchive
 
 > 给一个微信公众号链接，把它完整存到本地：Markdown + 离线 HTML + 原图，按年月日分文件夹。**不需要登录，不需要浏览器。**
